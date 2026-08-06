@@ -1,8 +1,12 @@
 var builder = WebApplication.CreateBuilder(args);
 
+// Use builder.Configuration instead of Configuration
 builder.Services.AddHttpClient("ShoppingAPIClient", client =>
 {
-    client.BaseAddress = new Uri("http://localhost:5000");
+    var shoppingApiUrl = builder.Configuration["ShoppingAPIUrl"]
+        ?? throw new InvalidOperationException("ShoppingAPIUrl configuration is missing.");
+
+    client.BaseAddress = new Uri(shoppingApiUrl);
 });
 
 // Add services to the container.

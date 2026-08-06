@@ -20,16 +20,35 @@ namespace Shopping.Client.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var response = await _httpClient.GetAsync("/api/product");
+            var response = await GetProductsResponseAsync();
             response.EnsureSuccessStatusCode();
 
             var content = await response.Content.ReadAsStringAsync();
             var productList = JsonSerializer.Deserialize<IEnumerable<Product>>(content, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
-            });
+            }) ?? Enumerable.Empty<Product>();
 
             return View(productList);
+        }
+
+        private async Task<HttpResponseMessage> GetProductsResponseAsync()
+        {
+            const int maxAttempts = 5;
+
+            for (var attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                try
+                {
+                    return await _httpClient.GetAsync("/api/product");
+                }
+                catch (HttpRequestException) when (attempt < maxAttempts)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(attempt));
+                }
+            }
+
+            return await _httpClient.GetAsync("/api/product");
         }
 
         public IActionResult Privacy()
